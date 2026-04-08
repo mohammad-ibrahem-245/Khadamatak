@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="/GatewayService (snapshot).java">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="/GatewayService (snapshot).java" />
+              <option name="originalContent" value="package org.example.gateway.Service;&#10;&#10;&#10;&#10;import org.example.gateway.Models.SiteUser;&#10;&#10;import org.springframework.http.ResponseEntity;&#10;import org.springframework.stereotype.Service;&#10;import org.springframework.web.reactive.function.client.WebClient;&#10;import reactor.core.publisher.Mono;&#10;&#10;@Service&#10;public class GatewayService {&#10;&#10;    private final WebClient webClient = WebClient.create(&quot;http://USER-API&quot;);&#10;&#10;    public Mono&lt;ResponseEntity&lt;String&gt;&gt; signup(SiteUser siteUser) {&#10;        return webClient.post()&#10;                .uri(&quot;/signup&quot;) // direct path to User-api&#10;                .bodyValue(siteUser)&#10;                .retrieve()&#10;                .bodyToMono(String.class)&#10;                .map(body -&gt; ResponseEntity.ok(body))&#10;                .onErrorResume(e -&gt; Mono.just(ResponseEntity.internalServerError()&#10;                        .body(&quot;Error: &quot; + e.getMessage())));&#10;    }&#10;&#10;}&#10;" />
+              <option name="updatedContent" value="package org.example.gateway.Service;&#10;&#10;&#10;&#10;import org.example.gateway.Feign.UserClient;&#10;import org.example.gateway.Models.SiteUser;&#10;&#10;import org.springframework.http.ResponseEntity;&#10;import org.springframework.stereotype.Service;&#10;import reactor.core.publisher.Mono;&#10;import reactor.core.scheduler.Schedulers;&#10;&#10;@Service&#10;public class GatewayService {&#10;&#10;    private final UserClient userClient;&#10;&#10;    public GatewayService(UserClient userClient) {&#10;        this.userClient = userClient;&#10;    }&#10;&#10;    public Mono&lt;ResponseEntity&lt;String&gt;&gt; signup(SiteUser siteUser) {&#10;        return Mono.fromCallable(() -&gt; userClient.save(siteUser))&#10;                .cast(ResponseEntity.class)&#10;                .map(response -&gt; ResponseEntity.status(response.getStatusCode())&#10;                        .body(response.getBody() != null ? response.getBody().toString() : &quot;&quot;))&#10;                .subscribeOn(Schedulers.boundedElastic())&#10;                .onErrorResume(e -&gt; Mono.just(ResponseEntity.internalServerError()&#10;                        .body(&quot;Error: &quot; + e.getMessage())));&#10;    }&#10;&#10;}" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="/application (snapshot).properties">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="/application (snapshot).properties" />
+              <option name="originalContent" value="spring.application.name=User-api&#10;spring.datasource.driver-class-name=org.postgresql.Driver&#10;spring.datasource.url=jdbc:postgresql://localhost:5432/users&#10;spring.datasource.password=blablablabla&#10;spring.datasource.username=mohammadali&#10;spring.jpa.hibernate.ddl-auto=update&#10;spring.jpa.show-sql=true&#10;spring.jpa.properties.hibernate.format_sql=true&#10;server.port=8080&#10;" />
+              <option name="updatedContent" value="spring.application.name=user-api&#10;spring.datasource.driver-class-name=org.postgresql.Driver&#10;spring.datasource.url=jdbc:postgresql://localhost:5432/users&#10;spring.datasource.password=blablablabla&#10;spring.datasource.username=mohammadali&#10;spring.jpa.hibernate.ddl-auto=update&#10;spring.jpa.show-sql=true&#10;spring.jpa.properties.hibernate.format_sql=true&#10;server.port=8080&#10;&#10;eureka.client.service-url.defaultZone=http://localhost:8761/eureka/&#10;eureka.instance.prefer-ip-address=true" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
