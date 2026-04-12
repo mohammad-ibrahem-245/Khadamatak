@@ -14,9 +14,11 @@ import java.util.Optional;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final NotificationClient notificationClient;
 
-    public BookingService(BookingRepository bookingRepository) {
+    public BookingService(BookingRepository bookingRepository, NotificationClient notificationClient) {
         this.bookingRepository = bookingRepository;
+        this.notificationClient = notificationClient;
     }
 
     public Booking create(Booking booking, Long currentUserId, boolean isAdmin) {
@@ -27,7 +29,10 @@ public class BookingService {
         if (!isAdmin) {
             booking.setUserId(currentUserId);
         }
-        return bookingRepository.save(booking);
+        Booking createdBooking = bookingRepository.save(booking);
+        notifyUser(createdBooking.getProviderID(), "You have a new booking request from user " + createdBooking.getUserId());
+        notifyUser(createdBooking.getUserId(), "Your booking request was created and is pending");
+        return createdBooking;
     }
 
     public List<Booking> findAll(Long currentUserId, boolean isAdmin, boolean isProvider) {
@@ -81,7 +86,9 @@ public class BookingService {
         return bookingRepository.findById(id).map(existingBooking -> {
             if (isAdmin) {
                 existingBooking.setBookingStatus(bookingStatus);
-                return bookingRepository.save(existingBooking);
+                Booking savedBooking = bookingRepository.save(existingBooking);
+                notifyUser(savedBooking.getUserId(), "Your booking status is now " + bookingStatus);
+                return savedBooking;
             }
 
             if (bookingStatus == BookingStatus.CANCELLED) {
@@ -95,7 +102,12 @@ public class BookingService {
             }
 
             existingBooking.setBookingStatus(bookingStatus);
-            return bookingRepository.save(existingBooking);
+            Booking savedBooking = bookingRepository.save(existingBooking);
+            notifyUser(savedBooking.getUserId(), "Your booking status is now " + bookingStatus);
+            if (bookingStatus == BookingStatus.CANCELLED) {
+                notifyUser(savedBooking.getProviderID(), "Booking " + savedBooking.getId() + " was cancelled by the user");
+            }
+            return savedBooking;
         });
     }
 
@@ -106,7 +118,16 @@ public class BookingService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own bookings");
         }
         bookingRepository.deleteById(id);
+        notifyUser(booking.getProviderID(), "Booking " + booking.getId() + " was deleted");
         return true;
+    }
+
+    private void notifyUser(Long userId, String message) {
+        try {
+            notificationClient.addNotification(new NotificationRequest(userId, message));
+        } catch (Exception ignored) {
+            // Best effort: booking workflow should not fail if notifications service is down.
+        }
     }
 
     private void assertBookingAccess(Booking booking, Long currentUserId, boolean isAdmin, boolean isProvider) {

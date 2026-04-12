@@ -13,9 +13,11 @@ import java.util.Optional;
 public class PostsService {
 
 	private final PostsRepositories postsRepositories;
+	private final NotificationClient notificationClient;
 
-	public PostsService(PostsRepositories postsRepositories) {
+	public PostsService(PostsRepositories postsRepositories, NotificationClient notificationClient) {
 		this.postsRepositories = postsRepositories;
+		this.notificationClient = notificationClient;
 	}
 
 	public Post create(Post post, Long userId, boolean isAdmin) {
@@ -25,7 +27,9 @@ public class PostsService {
 		} else if (post.getOwner() == null) {
 			post.setOwner(userId);
 		}
-		return postsRepositories.save(post);
+		Post createdPost = postsRepositories.save(post);
+		notifyUser(createdPost.getOwner(), "Your post was created successfully");
+		return createdPost;
 	}
 
 	public List<Post> findAll(Long userId, boolean isAdmin) {
@@ -56,7 +60,9 @@ public class PostsService {
 			if (isAdmin && updatedPost.getOwner() != null) {
 				existingPost.setOwner(updatedPost.getOwner());
 			}
-			return postsRepositories.save(existingPost);
+			Post savedPost = postsRepositories.save(existingPost);
+			notifyUser(savedPost.getOwner(), "Your post was updated");
+			return savedPost;
 		});
 	}
 
@@ -65,7 +71,16 @@ public class PostsService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 		assertOwnerOrAdmin(post, userId, isAdmin);
 		postsRepositories.deleteById(id);
+		notifyUser(post.getOwner(), "Your post was deleted");
 		return true;
+	}
+
+	private void notifyUser(Long userId, String message) {
+		try {
+			notificationClient.addNotification(new NotificationRequest(userId, message));
+		} catch (Exception ignored) {
+			// Best effort: post workflow should not fail if notifications service is down.
+		}
 	}
 
 	private void assertOwnerOrAdmin(Post post, Long userId, boolean isAdmin) {
