@@ -1,14 +1,20 @@
-# Use Java 25 (early access)
-FROM openjdk:25-ea-jdk-slim
+FROM openjdk:25-ea-jdk-slim AS builder
 
-# Set working directory inside the container
 WORKDIR /app
 
-# Copy the built jar file
-COPY target/*.jar app.jar
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+COPY src src
 
-# Expose the default Spring Boot port
+RUN chmod +x mvnw && ./mvnw -DskipTests clean package
+RUN cp "$(ls target/*.jar | grep -v '.jar.original' | head -n 1)" app.jar
+
+FROM openjdk:25-ea-jdk-slim
+
+WORKDIR /app
+
+COPY --from=builder /app/app.jar app.jar
+
 EXPOSE 8761
 
-# Run the jar
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -1,0 +1,137 @@
+services:
+  eureka-server:
+    build:
+      context: "./Eureka server"
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+
+  user-db:
+    image: postgres:16-alpine
+    container_name: user-db
+    environment:
+      POSTGRES_DB: users
+      POSTGRES_USER: mohammadali
+      POSTGRES_PASSWORD: blablablabla
+    ports:
+      - "5433:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+
+  posts-db:
+    image: postgres:16-alpine
+    container_name: posts-db
+    environment:
+      POSTGRES_DB: posts
+      POSTGRES_USER: mohammadali
+      POSTGRES_PASSWORD: blablablabla
+    ports:
+      - "5434:5432"
+    volumes:
+      - posts-db-data:/var/lib/postgresql/data
+
+  bookings-db:
+    image: postgres:16-alpine
+    container_name: bookings-db
+    environment:
+      POSTGRES_DB: bookings
+      POSTGRES_USER: mohammadali
+      POSTGRES_PASSWORD: blablablabla
+    ports:
+      - "5435:5432"
+    volumes:
+      - bookings-db-data:/var/lib/postgresql/data
+
+  notifications-db:
+    image: postgres:16-alpine
+    container_name: notifications-db
+    environment:
+      POSTGRES_DB: notification
+      POSTGRES_USER: mohammadali
+      POSTGRES_PASSWORD: blablablabla
+    ports:
+      - "5436:5432"
+    volumes:
+      - notifications-db-data:/var/lib/postgresql/data
+
+  user-api:
+    build:
+      context: ./User-api
+    container_name: user-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+      - user-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/users
+      SPRING_DATASOURCE_USERNAME: mohammadali
+      SPRING_DATASOURCE_PASSWORD: blablablabla
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+  posts:
+    build:
+      context: ./Posts
+    container_name: posts
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - posts-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://posts-db:5432/posts
+      SPRING_DATASOURCE_USERNAME: mohammadali
+      SPRING_DATASOURCE_PASSWORD: blablablabla
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+  bookings:
+    build:
+      context: ./Bookings
+    container_name: bookings
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - bookings-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bookings-db:5432/bookings
+      SPRING_DATASOURCE_USERNAME: mohammadali
+      SPRING_DATASOURCE_PASSWORD: blablablabla
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+  notifications:
+    build:
+      context: ./notifications
+    container_name: notifications
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+      - notifications-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://notifications-db:5432/notification
+      SPRING_DATASOURCE_USERNAME: mohammadali
+      SPRING_DATASOURCE_PASSWORD: blablablabla
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+  gateway:
+    build:
+      context: ./Gateway
+    container_name: gateway
+    ports:
+      - "8765:8765"
+    depends_on:
+      - eureka-server
+      - user-api
+      - posts
+      - bookings
+      - notifications
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+volumes:
+  user-db-data:
+  posts-db-data:
+  bookings-db-data:
+  notifications-db-data:
+
