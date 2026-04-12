@@ -44,7 +44,7 @@ public class AuthController {
                         .body(Map.of("error", "Invalid password"));
             }
 
-            String token = jwtUtil.generateToken(user.getEmail());
+            String token = jwtUtil.generateToken(user);
             return ResponseEntity.ok(Map.of("token", token));
         }).subscribeOn(Schedulers.boundedElastic());
     }

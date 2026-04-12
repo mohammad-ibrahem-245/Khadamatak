@@ -31,8 +31,7 @@ public class UserService {
 
     /// searching for user
     public Optional<SiteUser> findUser(String username) {
-        Optional<SiteUser> user = Optional.ofNullable(userRepo.findByEmail(username));
-        return user;
+        return Optional.ofNullable(userRepo.findByEmail(username));
     }
 
 
@@ -56,12 +55,12 @@ public class UserService {
     public boolean saveUser(SiteUser user){
         if (!checkUserExists(user.getEmail())) {
 
+            user.setAdmin(false);
+            user.setProvider(false);
             user.setPassword(passwordHasher.hashToString(12, user.getPassword().toCharArray()));
             user.setCreated(Date.from(new Date().toInstant()));
             userRepo.save(user);
-            if (findUser(user.getEmail()).isPresent()) {
-                return true;
-            }
+            return findUser(user.getEmail()).isPresent();
         }
         return false ;
     }
@@ -69,8 +68,8 @@ public class UserService {
 
 
     /// deleting a username account
-    public boolean deleteUser(String username , String user){
-        if(username.equals(user)) {
+    public boolean deleteUser(String username , String user, boolean isAdmin){
+        if(isAdmin || username.equals(user)) {
             if (checkUserExists(username)) {
                 findUser(username).ifPresent(userRepo::delete);
                 return true;
@@ -82,8 +81,8 @@ public class UserService {
 
 
     /// updating user data
-    public boolean updateUser(SiteUser updatedUser ,String username){
-        if(username.equals(updatedUser.getEmail())) {
+    public boolean updateUser(SiteUser updatedUser ,String username, boolean isAdmin){
+        if(isAdmin || username.equals(updatedUser.getEmail())) {
             if (checkUserExists(updatedUser.getEmail())) {
                 SiteUser oldUser = userRepo.findByEmail(updatedUser.getEmail());
                 oldUser.setName(updatedUser.getName());

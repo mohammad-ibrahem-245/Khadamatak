@@ -19,24 +19,23 @@ public class UserController {
 
     @GetMapping("/search/{email}")
     public ResponseEntity<SiteUser> search(@PathVariable String email){
-       Optional<SiteUser> user = userService.findUser(email);
-        if(user.isPresent()){
-            return ResponseEntity.ok(user.get());
-        }
-        return ResponseEntity.notFound().build();
+       return userService.findUser(email)
+               .map(ResponseEntity::ok)
+               .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/getall/{isProvider}")
-    public ResponseEntity<List<SiteUser>> random(@PathVariable boolean isProvider){
-        Optional<List<SiteUser>> allUsers = userService.allUsers(isProvider);
-        if(allUsers.isPresent()){
-            return ResponseEntity.ok(allUsers.get());
+    public ResponseEntity<List<SiteUser>> random(@PathVariable boolean isProvider, @RequestHeader("X-Is-Admin") boolean isAdmin){
+        if (!isAdmin) {
+            return ResponseEntity.status(403).build();
         }
-        return ResponseEntity.notFound().build();
+        return userService.allUsers(isProvider)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/signup")
-    public ResponseEntity save(@RequestBody SiteUser user) {
+    public ResponseEntity<Void> save(@RequestBody SiteUser user) {
 
         if (userService.saveUser(user)) {
             return ResponseEntity.ok().build();
@@ -48,16 +47,16 @@ public class UserController {
 
 
     @PutMapping("/update")
-    public ResponseEntity update(@RequestBody SiteUser user , @RequestHeader("X-User-Name") String username){
-        if (userService.updateUser(user ,username)) {
+    public ResponseEntity<Void> update(@RequestBody SiteUser user , @RequestHeader("X-User-Name") String username, @RequestHeader("X-Is-Admin") boolean isAdmin){
+        if (userService.updateUser(user ,username, isAdmin)) {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.badRequest().build();
     }
 
     @DeleteMapping("/delete/{email}")
-    public ResponseEntity delete(@PathVariable String email ,  @RequestHeader("X-User-Name") String user){
-        if (userService.deleteUser(email,user)){
+    public ResponseEntity<Void> delete(@PathVariable String email ,  @RequestHeader("X-User-Name") String user, @RequestHeader("X-Is-Admin") boolean isAdmin){
+        if (userService.deleteUser(email,user,isAdmin)){
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.badRequest().build();

@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -41,9 +40,17 @@ public class JwtAuthFilter {
                         .getPayload();
 
                 String username = claims.getSubject();
+                String userId = String.valueOf(claims.get("userId"));
+                String isAdmin = String.valueOf(claims.get("isAdmin"));
+                String isProvider = String.valueOf(claims.get("isProvider"));
 
                 ServerWebExchange mutated = exchange.mutate()
-                        .request(r -> r.headers(h -> h.add("X-User-Name", username)))
+                        .request(r -> r.headers(h -> {
+                            h.set("X-User-Name", username);
+                            h.set("X-User-Id", userId);
+                            h.set("X-Is-Admin", isAdmin);
+                            h.set("X-Is-Provider", isProvider);
+                        }))
                         .build();
 
                 return chain.filter(mutated);

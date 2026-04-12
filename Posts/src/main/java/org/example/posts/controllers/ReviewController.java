@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -26,8 +27,10 @@ public class ReviewController {
 
 
     @PostMapping("/add")
-    public ResponseEntity<Reviews> create(@RequestBody Reviews review) {
-        return ResponseEntity.ok(reviewService.create(review));
+    public ResponseEntity<Reviews> create(@RequestBody Reviews review,
+                                          @RequestHeader("X-User-Name") String username,
+                                          @RequestHeader("X-Is-Admin") boolean isAdmin) {
+        return ResponseEntity.ok(reviewService.create(review, username, isAdmin));
     }
 
     @GetMapping("/allreviews")
@@ -43,15 +46,19 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Reviews> update(@PathVariable Long id, @RequestBody Reviews review) {
-        return reviewService.update(id, review)
+    public ResponseEntity<Reviews> update(@PathVariable Long id, @RequestBody Reviews review,
+                                          @RequestHeader("X-User-Name") String username,
+                                          @RequestHeader("X-Is-Admin") boolean isAdmin) {
+        return reviewService.update(id, review, username, isAdmin)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        return reviewService.delete(id)
+    public ResponseEntity<Void> delete(@PathVariable Long id,
+                                       @RequestHeader("X-User-Name") String username,
+                                       @RequestHeader("X-Is-Admin") boolean isAdmin) {
+        return reviewService.delete(id, username, isAdmin)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
     }

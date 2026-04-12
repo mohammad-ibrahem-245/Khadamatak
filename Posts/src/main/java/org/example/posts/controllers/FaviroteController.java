@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -22,8 +23,10 @@ public class FaviroteController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> add(@RequestBody Favirote favirote) {
-        boolean added = faviroteService.add(favirote.getUserId(), favirote.getPostId());
+    public ResponseEntity<Void> add(@RequestBody Favirote favirote,
+                                    @RequestHeader("X-User-Id") Long currentUserId,
+                                    @RequestHeader("X-Is-Admin") boolean isAdmin) {
+        boolean added = faviroteService.add(favirote.getUserId(), favirote.getPostId(), currentUserId, isAdmin);
         if (!added) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
@@ -31,8 +34,10 @@ public class FaviroteController {
     }
 
     @DeleteMapping("/{userId}/{postId}")
-    public ResponseEntity<Void> delete(@PathVariable Long userId, @PathVariable Long postId) {
-        boolean deleted = faviroteService.delete(userId, postId);
+    public ResponseEntity<Void> delete(@PathVariable Long userId, @PathVariable Long postId,
+                                       @RequestHeader("X-User-Id") Long currentUserId,
+                                       @RequestHeader("X-Is-Admin") boolean isAdmin) {
+        boolean deleted = faviroteService.delete(userId, postId, currentUserId, isAdmin);
         if (!deleted) {
             return ResponseEntity.notFound().build();
         }

@@ -1,9 +1,8 @@
 package org.example.gateway.Security;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.example.gateway.Models.SiteUser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -14,26 +13,21 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private static SecretKey key = null;
+    private static SecretKey key;
 
     public JwtUtil(@Value("${jwt.secret}") String secret) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        JwtUtil.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username) {
+    public String generateToken(SiteUser user) {
         return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 3600_000)) // 1 hour
-                .signWith(key, SignatureAlgorithm.HS256)
+                .subject(user.getEmail())
+                .claim("userId", user.getId())
+                .claim("isAdmin", user.isAdmin())
+                .claim("isProvider", user.isProvider())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3600_000))
+                .signWith(key)
                 .compact();
-    }
-
-    public static Claims validateToken(String token) {
-        return Jwts.parser()
-                .setSigningKey(key)         // use this if verifyWith is not found
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
     }
 }
