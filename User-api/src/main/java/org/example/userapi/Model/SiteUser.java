@@ -35,6 +35,10 @@ public class SiteUser {
     private boolean isAdmin;
     @Column(nullable = false)
     private boolean isProvider;
+    @Column(nullable = false)
+    private double latitude;
+    @Column(nullable = false)
+    private double longitude;
 
 
 }
