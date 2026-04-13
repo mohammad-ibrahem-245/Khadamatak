@@ -24,8 +24,8 @@ public class UserController {
                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/getall/{isProvider}")
-    public ResponseEntity<List<SiteUser>> random(@PathVariable boolean isProvider, @RequestHeader("X-Is-Admin") boolean isAdmin){
+    @GetMapping("/getall")
+    public ResponseEntity<List<SiteUser>> random(@RequestParam boolean isProvider, @RequestHeader("X-Is-Admin") boolean isAdmin){
         if (!isAdmin) {
             return ResponseEntity.status(403).build();
         }
