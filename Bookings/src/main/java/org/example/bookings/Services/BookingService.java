@@ -1,7 +1,9 @@
 package org.example.bookings.Services;
 
 import org.example.bookings.Enum.BookingStatus;
+import org.example.bookings.FeignClients.NotificationClient;
 import org.example.bookings.Models.Booking;
+import org.example.bookings.Models.NotificationRequest;
 import org.example.bookings.Repositories.BookingRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,12 @@ import java.util.Optional;
 @Service
 public class BookingService {
 
+    public enum UserRole {
+        USER,
+        PROVIDER,
+        ADMIN
+    }
+
     private final BookingRepository bookingRepository;
     private final NotificationClient notificationClient;
 
@@ -21,12 +29,12 @@ public class BookingService {
         this.notificationClient = notificationClient;
     }
 
-    public Booking create(Booking booking, Long currentUserId, boolean isAdmin) {
+    public Booking create(Booking booking, Long currentUserId, UserRole role) {
         booking.setId(null);
         if (booking.getBookingStatus() == null) {
             booking.setBookingStatus(BookingStatus.PENDING);
         }
-        if (!isAdmin) {
+        if (!isAdmin(role)) {
             booking.setUserId(currentUserId);
         }
         Booking createdBooking = bookingRepository.save(booking);
@@ -35,56 +43,54 @@ public class BookingService {
         return createdBooking;
     }
 
-    public List<Booking> findAll(Long currentUserId, boolean isAdmin, boolean isProvider) {
-        if (isAdmin) {
+    public List<Booking> findAll(Long currentUserId, UserRole role) {
+        if (isAdmin(role)) {
             return bookingRepository.findAll();
         }
-        if (isProvider) {
+        if (isProvider(role)) {
             return bookingRepository.findAllByProviderID(currentUserId);
         }
         return bookingRepository.findAllByUserId(currentUserId);
     }
 
-    public Optional<Booking> findById(Long id, Long currentUserId, boolean isAdmin, boolean isProvider) {
+    public Optional<Booking> findById(Long id, Long currentUserId, UserRole role) {
         return bookingRepository.findById(id).map(booking -> {
-            assertBookingAccess(booking, currentUserId, isAdmin, isProvider);
+            assertBookingAccess(booking, currentUserId, role);
             return booking;
         });
     }
 
-    public List<Booking> findAllByUserId(Long userId, Long currentUserId, boolean isAdmin) {
-        if (!isAdmin && !userId.equals(currentUserId)) {
+    public List<Booking> findAllByUserId(Long userId, Long currentUserId, UserRole role) {
+        if (!isAdmin(role) && !userId.equals(currentUserId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view your own bookings");
         }
         return bookingRepository.findAllByUserId(userId);
     }
 
-    public List<Booking> findAllByProviderID(Long providerID, Long currentUserId, boolean isAdmin, boolean isProvider) {
-        if (!isAdmin && (!isProvider || !providerID.equals(currentUserId))) {
+    public List<Booking> findAllByProviderID(Long providerID, Long currentUserId, UserRole role) {
+        if (!isAdmin(role) && (!isProvider(role) || !providerID.equals(currentUserId))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view your own provider bookings");
         }
         return bookingRepository.findAllByProviderID(providerID);
     }
 
-    public Optional<Booking> update(Long id, Booking updatedBooking, Long currentUserId, boolean isAdmin, boolean isProvider) {
+    public Optional<Booking> update(Long id, Booking updatedBooking, Long currentUserId, UserRole role) {
         return bookingRepository.findById(id).map(existingBooking -> {
-            assertBookingAccess(existingBooking, currentUserId, isAdmin, isProvider);
+            assertBookingAccess(existingBooking, currentUserId, role);
             existingBooking.setUserId(updatedBooking.getUserId());
             existingBooking.setProviderID(updatedBooking.getProviderID());
             existingBooking.setBookingDate(updatedBooking.getBookingDate());
             existingBooking.setBookingTime(updatedBooking.getBookingTime());
-            existingBooking.setLongitude(updatedBooking.getLongitude());
-            existingBooking.setLatitude(updatedBooking.getLatitude());
-            if (!isAdmin) {
+            if (!isAdmin(role)) {
                 existingBooking.setUserId(currentUserId);
             }
             return bookingRepository.save(existingBooking);
         });
     }
 
-    public Optional<Booking> updateStatus(Long id, BookingStatus bookingStatus, Long currentUserId, boolean isAdmin, boolean isProvider) {
+    public Optional<Booking> updateStatus(Long id, BookingStatus bookingStatus, Long currentUserId, UserRole role) {
         return bookingRepository.findById(id).map(existingBooking -> {
-            if (isAdmin) {
+            if (isAdmin(role)) {
                 existingBooking.setBookingStatus(bookingStatus);
                 Booking savedBooking = bookingRepository.save(existingBooking);
                 notifyUser(savedBooking.getUserId(), "Your booking status is now " + bookingStatus);
@@ -96,7 +102,7 @@ public class BookingService {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the booking owner can cancel it");
                 }
             } else {
-                if (!isProvider || !existingBooking.getProviderID().equals(currentUserId)) {
+                if (!isProvider(role) || !existingBooking.getProviderID().equals(currentUserId)) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the assigned provider can change this status");
                 }
             }
@@ -111,10 +117,10 @@ public class BookingService {
         });
     }
 
-    public boolean delete(Long id, Long currentUserId, boolean isAdmin) {
+    public boolean delete(Long id, Long currentUserId, UserRole role) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
-        if (!isAdmin && !booking.getUserId().equals(currentUserId)) {
+        if (!isAdmin(role) && !booking.getUserId().equals(currentUserId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own bookings");
         }
         bookingRepository.deleteById(id);
@@ -130,15 +136,23 @@ public class BookingService {
         }
     }
 
-    private void assertBookingAccess(Booking booking, Long currentUserId, boolean isAdmin, boolean isProvider) {
-        if (isAdmin) {
+    private void assertBookingAccess(Booking booking, Long currentUserId, UserRole role) {
+        if (isAdmin(role)) {
             return;
         }
         boolean owner = booking.getUserId().equals(currentUserId);
-        boolean assignedProvider = isProvider && booking.getProviderID().equals(currentUserId);
+        boolean assignedProvider = isProvider(role) && booking.getProviderID().equals(currentUserId);
         if (!owner && !assignedProvider) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only access your own bookings");
         }
+    }
+
+    private boolean isAdmin(UserRole role) {
+        return role == UserRole.ADMIN;
+    }
+
+    private boolean isProvider(UserRole role) {
+        return role == UserRole.PROVIDER;
     }
 }
 

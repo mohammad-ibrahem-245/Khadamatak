@@ -19,8 +19,7 @@ This repository contains a Spring Boot microservices system with service discove
 - Gateway injects trusted headers to downstream services:
   - `X-User-Name`
   - `X-User-Id`
-  - `X-Is-Admin`
-  - `X-Is-Provider`
+  - `X-Role` (`USER`, `PROVIDER`, `ADMIN`)
 
 ## Run With Docker Compose
 
@@ -114,7 +113,7 @@ Body:
 ```
 
 ### `POST /auth/login`
-Returns JWT with claims: `sub`, `userId`, `isAdmin`, `isProvider`.
+Returns JWT with claims: `sub`, `userId`, `role`.
 
 Body:
 
@@ -135,8 +134,8 @@ Health check for gateway.
 ### `GET /user-api/search/{email}`
 Get user by email.
 
-### `GET /user-api/getall/{isProvider}`
-Get all users filtered by provider flag.
+### `GET /user-api/getall?role={USER|PROVIDER|ADMIN}`
+Get all users, optionally filtered by role.
 
 Headers:
 - `Authorization: Bearer <jwt>` (admin only)

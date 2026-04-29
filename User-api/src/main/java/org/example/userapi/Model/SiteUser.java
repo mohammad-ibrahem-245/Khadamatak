@@ -13,6 +13,12 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SiteUser {
+    public enum UserRole {
+        USER,
+        PROVIDER,
+        ADMIN
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,18 +32,14 @@ public class SiteUser {
     private String password;
     @Column(length = 1000)
     private String bio ;
-    @Column(nullable = true)
     private String image ;
     @Column(nullable = false)
     private Date created ;
     private String career;
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private boolean isAdmin;
-    @Column(nullable = false)
-    private boolean isProvider;
-    @Column(nullable = false)
+    private UserRole role;
     private double latitude;
-    @Column(nullable = false)
     private double longitude;
 
 

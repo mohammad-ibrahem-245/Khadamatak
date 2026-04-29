@@ -3,6 +3,7 @@ package org.example.bookings.Controllers;
 import org.example.bookings.Enum.BookingStatus;
 import org.example.bookings.Models.Booking;
 import org.example.bookings.Services.BookingService;
+import org.example.bookings.Services.BookingService.UserRole;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,8 +31,8 @@ public class BookingController {
 	@PostMapping
 	public ResponseEntity<Booking> create(@RequestBody Booking booking,
 			@RequestHeader("X-User-Id") Long currentUserId,
-			@RequestHeader("X-Is-Admin") boolean isAdmin) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.create(booking, currentUserId, isAdmin));
+			@RequestHeader("X-Role") UserRole role) {
+		return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.create(booking, currentUserId, role));
 	}
 
 	@GetMapping
@@ -39,24 +40,22 @@ public class BookingController {
 			@RequestParam(required = false) Long userId,
 			@RequestParam(required = false) Long providerId,
 			@RequestHeader("X-User-Id") Long currentUserId,
-			@RequestHeader("X-Is-Admin") boolean isAdmin,
-			@RequestHeader("X-Is-Provider") boolean isProvider) {
+			@RequestHeader("X-Role") UserRole role) {
 
 		if (userId != null) {
-			return ResponseEntity.ok(bookingService.findAllByUserId(userId, currentUserId, isAdmin));
+			return ResponseEntity.ok(bookingService.findAllByUserId(userId, currentUserId, role));
 		}
 		if (providerId != null) {
-			return ResponseEntity.ok(bookingService.findAllByProviderID(providerId, currentUserId, isAdmin, isProvider));
+			return ResponseEntity.ok(bookingService.findAllByProviderID(providerId, currentUserId, role));
 		}
-		return ResponseEntity.ok(bookingService.findAll(currentUserId, isAdmin, isProvider));
+		return ResponseEntity.ok(bookingService.findAll(currentUserId, role));
 	}
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Booking> findById(@PathVariable Long id,
 			@RequestHeader("X-User-Id") Long currentUserId,
-			@RequestHeader("X-Is-Admin") boolean isAdmin,
-			@RequestHeader("X-Is-Provider") boolean isProvider) {
-		return bookingService.findById(id, currentUserId, isAdmin, isProvider)
+			@RequestHeader("X-Role") UserRole role) {
+		return bookingService.findById(id, currentUserId, role)
 				.map(ResponseEntity::ok)
 				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
@@ -64,9 +63,8 @@ public class BookingController {
 	@PutMapping("/{id}")
 	public ResponseEntity<Booking> update(@PathVariable Long id, @RequestBody Booking booking,
 			@RequestHeader("X-User-Id") Long currentUserId,
-			@RequestHeader("X-Is-Admin") boolean isAdmin,
-			@RequestHeader("X-Is-Provider") boolean isProvider) {
-		return bookingService.update(id, booking, currentUserId, isAdmin, isProvider)
+			@RequestHeader("X-Role") UserRole role) {
+		return bookingService.update(id, booking, currentUserId, role)
 				.map(ResponseEntity::ok)
 				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
@@ -76,10 +74,9 @@ public class BookingController {
 			@PathVariable Long id,
 			@RequestParam BookingStatus status,
 			@RequestHeader("X-User-Id") Long currentUserId,
-			@RequestHeader("X-Is-Admin") boolean isAdmin,
-			@RequestHeader("X-Is-Provider") boolean isProvider) {
+			@RequestHeader("X-Role") UserRole role) {
 
-		return bookingService.updateStatus(id, status, currentUserId, isAdmin, isProvider)
+		return bookingService.updateStatus(id, status, currentUserId, role)
 				.map(ResponseEntity::ok)
 				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
@@ -87,8 +84,8 @@ public class BookingController {
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public ResponseEntity<Void> delete(@PathVariable Long id,
 			@RequestHeader("X-User-Id") Long currentUserId,
-			@RequestHeader("X-Is-Admin") boolean isAdmin) {
-		return bookingService.delete(id, currentUserId, isAdmin)
+			@RequestHeader("X-Role") UserRole role) {
+		return bookingService.delete(id, currentUserId, role)
 				? ResponseEntity.noContent().build()
 				: ResponseEntity.notFound().build();
 	}

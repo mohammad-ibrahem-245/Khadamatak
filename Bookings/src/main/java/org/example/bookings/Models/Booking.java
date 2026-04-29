@@ -25,10 +25,6 @@ public class Booking {
     @Column(nullable = false)
     private LocalTime bookingTime;
     @Column(nullable = false)
-    private String Longitude;
-    @Column(nullable = false)
-    private String Latitude;
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private BookingStatus bookingStatus;
 

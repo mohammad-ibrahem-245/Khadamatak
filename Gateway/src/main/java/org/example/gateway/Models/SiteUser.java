@@ -6,6 +6,12 @@ import java.util.Date;
 
 @Data
 public class SiteUser {
+    public enum UserRole {
+        USER,
+        PROVIDER,
+        ADMIN
+    }
+
     private Long id;
     private String email;
     private String phoneNumber;
@@ -15,7 +21,6 @@ public class SiteUser {
     private String image ;
     private Date created ;
     private String career;
-    private boolean isAdmin;
-    private boolean isProvider;
+    private UserRole role;
 
 }

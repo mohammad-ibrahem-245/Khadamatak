@@ -2,6 +2,7 @@ package org.example.posts.controllers;
 
 import org.example.posts.Models.Post;
 import org.example.posts.Services.PostsService;
+import org.example.posts.Services.PostsService.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,25 +27,25 @@ public class PostsController {
     @PostMapping("/add")
     public ResponseEntity<Post> create(@RequestBody Post post,
                                        @RequestHeader("X-User-Id") Long userId,
-                                       @RequestHeader("X-Is-Admin") boolean isAdmin) {
-        return ResponseEntity.ok(postsService.create(post, userId, isAdmin));
+                                       @RequestHeader("X-Role") UserRole role) {
+        return ResponseEntity.ok(postsService.create(post, userId, role));
     }
 
       @GetMapping("/all")
       public ResponseEntity<List<Post>> findAll(@RequestParam(required = false) Long owner,
                                                 @RequestHeader("X-User-Id") Long userId,
-                                                @RequestHeader("X-Is-Admin") boolean isAdmin) {
+                                                @RequestHeader("X-Role") UserRole role) {
         if (owner != null) {
-          return ResponseEntity.ok(postsService.findAllByOwner(owner, userId, isAdmin));
+          return ResponseEntity.ok(postsService.findAllByOwner(owner, userId, role));
         }
-        return ResponseEntity.ok(postsService.findAll(userId, isAdmin));
+        return ResponseEntity.ok(postsService.findAll(userId, role));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Post> findById(@PathVariable Long id,
                                          @RequestHeader("X-User-Id") Long userId,
-                                         @RequestHeader("X-Is-Admin") boolean isAdmin) {
-        return postsService.findById(id, userId, isAdmin)
+                                         @RequestHeader("X-Role") UserRole role) {
+        return postsService.findById(id, userId, role)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -52,8 +53,8 @@ public class PostsController {
     @PutMapping("/{id}")
     public ResponseEntity<Post> update(@PathVariable Long id, @RequestBody Post post,
                                       @RequestHeader("X-User-Id") Long userId,
-                                      @RequestHeader("X-Is-Admin") boolean isAdmin) {
-        return postsService.update(id, post, userId, isAdmin)
+                                      @RequestHeader("X-Role") UserRole role) {
+        return postsService.update(id, post, userId, role)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -61,8 +62,8 @@ public class PostsController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id,
                                        @RequestHeader("X-User-Id") Long userId,
-                                       @RequestHeader("X-Is-Admin") boolean isAdmin) {
-        return postsService.delete(id, userId, isAdmin)
+                                       @RequestHeader("X-Role") UserRole role) {
+        return postsService.delete(id, userId, role)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
     }

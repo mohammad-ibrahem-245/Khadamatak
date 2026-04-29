@@ -1,6 +1,7 @@
 package org.example.gateway.Security;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.MacAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.example.gateway.Models.SiteUser;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,7 @@ import java.util.Date;
 public class JwtUtil {
 
     private static SecretKey key;
+    private static final MacAlgorithm JWT_ALGORITHM = Jwts.SIG.HS512;
 
     public JwtUtil(@Value("${jwt.secret}") String secret) {
         JwtUtil.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -23,11 +25,10 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
-                .claim("isAdmin", user.isAdmin())
-                .claim("isProvider", user.isProvider())
+                .claim("role", user.getRole() == null ? SiteUser.UserRole.USER.name() : user.getRole().name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 3600_000))
-                .signWith(key)
+                .signWith(key, JWT_ALGORITHM)
                 .compact();
     }
 }

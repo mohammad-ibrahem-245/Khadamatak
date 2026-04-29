@@ -2,6 +2,7 @@ package org.example.posts.controllers;
 
 import org.example.posts.Models.Favirote;
 import org.example.posts.Services.FaviroteService;
+import org.example.posts.Services.PostsService.UserRole;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,8 +26,8 @@ public class FaviroteController {
     @PostMapping
     public ResponseEntity<Void> add(@RequestBody Favirote favirote,
                                     @RequestHeader("X-User-Id") Long currentUserId,
-                                    @RequestHeader("X-Is-Admin") boolean isAdmin) {
-        boolean added = faviroteService.add(favirote.getUserId(), favirote.getPostId(), currentUserId, isAdmin);
+                                    @RequestHeader("X-Role") UserRole role) {
+        boolean added = faviroteService.add(favirote.getUserId(), favirote.getPostId(), currentUserId, role);
         if (!added) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
@@ -36,8 +37,8 @@ public class FaviroteController {
     @DeleteMapping("/{userId}/{postId}")
     public ResponseEntity<Void> delete(@PathVariable Long userId, @PathVariable Long postId,
                                        @RequestHeader("X-User-Id") Long currentUserId,
-                                       @RequestHeader("X-Is-Admin") boolean isAdmin) {
-        boolean deleted = faviroteService.delete(userId, postId, currentUserId, isAdmin);
+                                       @RequestHeader("X-Role") UserRole role) {
+        boolean deleted = faviroteService.delete(userId, postId, currentUserId, role);
         if (!deleted) {
             return ResponseEntity.notFound().build();
         }

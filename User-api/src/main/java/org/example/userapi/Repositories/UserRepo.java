@@ -1,6 +1,7 @@
 package org.example.userapi.Repositories;
 
 import org.example.userapi.Model.SiteUser;
+import org.example.userapi.Model.SiteUser.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +13,6 @@ public interface UserRepo extends JpaRepository<SiteUser,Long> {
     SiteUser findByEmail(String userid);
     boolean existsByEmail(String userid);
 
-    List<SiteUser> findAllByIsProvider(boolean isProvider);
+    List<SiteUser> findAllByRole(UserRole role);
 
 }

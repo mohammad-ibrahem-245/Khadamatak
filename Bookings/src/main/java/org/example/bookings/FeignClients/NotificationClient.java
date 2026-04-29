@@ -1,5 +1,6 @@
-package org.example.bookings.Services;
+package org.example.bookings.FeignClients;
 
+import org.example.bookings.Models.NotificationRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

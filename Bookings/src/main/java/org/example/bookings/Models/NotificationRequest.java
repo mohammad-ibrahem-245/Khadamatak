@@ -1,4 +1,4 @@
-package org.example.bookings.Services;
+package org.example.bookings.Models;
 
 public class NotificationRequest {
     private Long userId;

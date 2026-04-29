@@ -1,13 +1,13 @@
 package org.example.userapi.Controllers;
 
 import org.example.userapi.Model.SiteUser;
+import org.example.userapi.Model.SiteUser.UserRole;
 import org.example.userapi.Services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 public class UserController {
@@ -25,11 +25,12 @@ public class UserController {
     }
 
     @GetMapping("/getall")
-    public ResponseEntity<List<SiteUser>> random(@RequestParam boolean isProvider, @RequestHeader("X-Is-Admin") boolean isAdmin){
-        if (!isAdmin) {
+    public ResponseEntity<List<SiteUser>> random(@RequestParam(required = false) UserRole role,
+                                                 @RequestHeader("X-Role") UserRole requesterRole){
+        if (requesterRole != UserRole.ADMIN) {
             return ResponseEntity.status(403).build();
         }
-        return userService.allUsers(isProvider)
+        return userService.allUsers(role)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -47,16 +48,16 @@ public class UserController {
 
 
     @PutMapping("/update")
-    public ResponseEntity<Void> update(@RequestBody SiteUser user , @RequestHeader("X-User-Name") String username, @RequestHeader("X-Is-Admin") boolean isAdmin){
-        if (userService.updateUser(user ,username, isAdmin)) {
+    public ResponseEntity<Void> update(@RequestBody SiteUser user , @RequestHeader("X-User-Name") String username, @RequestHeader("X-Role") UserRole requesterRole){
+        if (userService.updateUser(user ,username, requesterRole)) {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.badRequest().build();
     }
 
     @DeleteMapping("/delete/{email}")
-    public ResponseEntity<Void> delete(@PathVariable String email ,  @RequestHeader("X-User-Name") String user, @RequestHeader("X-Is-Admin") boolean isAdmin){
-        if (userService.deleteUser(email,user,isAdmin)){
+    public ResponseEntity<Void> delete(@PathVariable String email ,  @RequestHeader("X-User-Name") String user, @RequestHeader("X-Role") UserRole requesterRole){
+        if (userService.deleteUser(email,user,requesterRole)){
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.badRequest().build();

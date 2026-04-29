@@ -2,6 +2,7 @@ package org.example.userapi.Services;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import org.example.userapi.Model.SiteUser;
+import org.example.userapi.Model.SiteUser.UserRole;
 import org.example.userapi.Repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,12 +37,15 @@ public class UserService {
 
 
 
-    public Optional<List<SiteUser>> allUsers(boolean isProvider) {
+    public Optional<List<SiteUser>> allUsers(UserRole role) {
 
         List<SiteUser> users;
 
-
-            users = userRepo.findAllByIsProvider(isProvider);
+        if (role == null) {
+            users = userRepo.findAll();
+        } else {
+            users = userRepo.findAllByRole(role);
+        }
 
         if (users.isEmpty()) {
             return Optional.empty();
@@ -55,8 +59,7 @@ public class UserService {
     public boolean saveUser(SiteUser user){
         if (!checkUserExists(user.getEmail())) {
 
-            user.setAdmin(false);
-            user.setProvider(false);
+            user.setRole(UserRole.USER);
             user.setPassword(passwordHasher.hashToString(12, user.getPassword().toCharArray()));
             user.setCreated(Date.from(new Date().toInstant()));
             userRepo.save(user);
@@ -68,8 +71,8 @@ public class UserService {
 
 
     /// deleting a username account
-    public boolean deleteUser(String username , String user, boolean isAdmin){
-        if(isAdmin || username.equals(user)) {
+    public boolean deleteUser(String username , String user, UserRole requesterRole){
+        if(isAdmin(requesterRole) || username.equals(user)) {
             if (checkUserExists(username)) {
                 findUser(username).ifPresent(userRepo::delete);
                 return true;
@@ -81,8 +84,8 @@ public class UserService {
 
 
     /// updating user data
-    public boolean updateUser(SiteUser updatedUser ,String username, boolean isAdmin){
-        if(isAdmin || username.equals(updatedUser.getEmail())) {
+    public boolean updateUser(SiteUser updatedUser ,String username, UserRole requesterRole){
+        if(isAdmin(requesterRole) || username.equals(updatedUser.getEmail())) {
             if (checkUserExists(updatedUser.getEmail())) {
                 SiteUser oldUser = userRepo.findByEmail(updatedUser.getEmail());
                 oldUser.setName(updatedUser.getName());
@@ -90,6 +93,9 @@ public class UserService {
                 oldUser.setPassword(updatedUser.getPassword());
                 oldUser.setImage(updatedUser.getImage());
                 oldUser.setCareer(updatedUser.getCareer());
+                if (isAdmin(requesterRole) && updatedUser.getRole() != null) {
+                    oldUser.setRole(updatedUser.getRole());
+                }
                 userRepo.save(oldUser);
                 return true;
             }
@@ -107,6 +113,10 @@ public class UserService {
 
         return userRepo.existsByEmail(user);
 
+    }
+
+    private boolean isAdmin(UserRole role) {
+        return role == UserRole.ADMIN;
     }
 
 

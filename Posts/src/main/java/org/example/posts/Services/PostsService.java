@@ -11,6 +11,11 @@ import java.util.Optional;
 
 @Service
 public class PostsService {
+	public enum UserRole {
+		USER,
+		PROVIDER,
+		ADMIN
+	}
 
 	private final PostsRepositories postsRepositories;
 	private final NotificationClient notificationClient;
@@ -20,9 +25,9 @@ public class PostsService {
 		this.notificationClient = notificationClient;
 	}
 
-	public Post create(Post post, Long userId, boolean isAdmin) {
+	public Post create(Post post, Long userId, UserRole role) {
 		post.setId(null);
-		if (!isAdmin) {
+		if (!isAdmin(role)) {
 			post.setOwner(userId);
 		} else if (post.getOwner() == null) {
 			post.setOwner(userId);
@@ -32,32 +37,32 @@ public class PostsService {
 		return createdPost;
 	}
 
-	public List<Post> findAll(Long userId, boolean isAdmin) {
-		return isAdmin ? postsRepositories.findAll() : postsRepositories.findAllByOwner(userId);
+	public List<Post> findAll(Long userId, UserRole role) {
+		return isAdmin(role) ? postsRepositories.findAll() : postsRepositories.findAllByOwner(userId);
 	}
 
-	public Optional<Post> findById(Long id, Long userId, boolean isAdmin) {
+	public Optional<Post> findById(Long id, Long userId, UserRole role) {
 		return postsRepositories.findById(id).map(post -> {
-			assertOwnerOrAdmin(post, userId, isAdmin);
+			assertOwnerOrAdmin(post, userId, role);
 			return post;
 		});
 	}
 
-	public List<Post> findAllByOwner(Long owner, Long userId, boolean isAdmin) {
-		if (!isAdmin && !owner.equals(userId)) {
+	public List<Post> findAllByOwner(Long owner, Long userId, UserRole role) {
+		if (!isAdmin(role) && !owner.equals(userId)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view your own posts");
 		}
 		return postsRepositories.findAllByOwner(owner);
 	}
 
-	public Optional<Post> update(Long id, Post updatedPost, Long userId, boolean isAdmin) {
+	public Optional<Post> update(Long id, Post updatedPost, Long userId, UserRole role) {
 		return postsRepositories.findById(id).map(existingPost -> {
-			assertOwnerOrAdmin(existingPost, userId, isAdmin);
+			assertOwnerOrAdmin(existingPost, userId, role);
 			existingPost.setTitle(updatedPost.getTitle());
 			existingPost.setContent(updatedPost.getContent());
 			existingPost.setImage(updatedPost.getImage());
 			existingPost.setPrice(updatedPost.getPrice());
-			if (isAdmin && updatedPost.getOwner() != null) {
+			if (isAdmin(role) && updatedPost.getOwner() != null) {
 				existingPost.setOwner(updatedPost.getOwner());
 			}
 			Post savedPost = postsRepositories.save(existingPost);
@@ -66,10 +71,10 @@ public class PostsService {
 		});
 	}
 
-	public boolean delete(Long id, Long userId, boolean isAdmin) {
+	public boolean delete(Long id, Long userId, UserRole role) {
 		Post post = postsRepositories.findById(id)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
-		assertOwnerOrAdmin(post, userId, isAdmin);
+		assertOwnerOrAdmin(post, userId, role);
 		postsRepositories.deleteById(id);
 		notifyUser(post.getOwner(), "Your post was deleted");
 		return true;
@@ -83,9 +88,13 @@ public class PostsService {
 		}
 	}
 
-	private void assertOwnerOrAdmin(Post post, Long userId, boolean isAdmin) {
-		if (!isAdmin && !post.getOwner().equals(userId)) {
+	private void assertOwnerOrAdmin(Post post, Long userId, UserRole role) {
+		if (!isAdmin(role) && !post.getOwner().equals(userId)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage your own posts");
 		}
+	}
+
+	private boolean isAdmin(UserRole role) {
+		return role == UserRole.ADMIN;
 	}
 }
