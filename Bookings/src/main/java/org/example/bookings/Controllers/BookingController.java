@@ -40,7 +40,7 @@ public class BookingController {
 			return ResponseEntity.ok(bookingService.findAllByProviderID(providerId, currentUserId, role));
 		}
 		if (role == UserRole.ADMIN) {
-			return ResponseEntity.ok(bookingService.findAll(currentUserId, role));
+			return ResponseEntity.ok(bookingService.findAll( role));
 		}
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 	}
