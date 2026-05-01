@@ -3,19 +3,10 @@ package org.example.bookings.Controllers;
 import org.example.bookings.Enum.BookingStatus;
 import org.example.bookings.Models.Booking;
 import org.example.bookings.Services.BookingService;
-import org.example.bookings.Services.BookingService.UserRole;
+import org.example.bookings.Enum.UserRole;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -48,7 +39,10 @@ public class BookingController {
 		if (providerId != null) {
 			return ResponseEntity.ok(bookingService.findAllByProviderID(providerId, currentUserId, role));
 		}
-		return ResponseEntity.ok(bookingService.findAll(currentUserId, role));
+		if (role == UserRole.ADMIN) {
+			return ResponseEntity.ok(bookingService.findAll(currentUserId, role));
+		}
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 	}
 
 	@GetMapping("/{id}")
@@ -81,7 +75,7 @@ public class BookingController {
 				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
 
-	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id,
 			@RequestHeader("X-User-Id") Long currentUserId,
 			@RequestHeader("X-Role") UserRole role) {

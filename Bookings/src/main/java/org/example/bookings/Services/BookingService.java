@@ -1,6 +1,7 @@
 package org.example.bookings.Services;
 
 import org.example.bookings.Enum.BookingStatus;
+import org.example.bookings.Enum.UserRole;
 import org.example.bookings.FeignClients.NotificationClient;
 import org.example.bookings.Models.Booking;
 import org.example.bookings.Models.NotificationRequest;
@@ -9,17 +10,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class BookingService {
 
-    public enum UserRole {
-        USER,
-        PROVIDER,
-        ADMIN
-    }
+
 
     private final BookingRepository bookingRepository;
     private final NotificationClient notificationClient;
@@ -31,33 +29,33 @@ public class BookingService {
 
     public Booking create(Booking booking, Long currentUserId, UserRole role) {
         booking.setId(null);
-        if (booking.getBookingStatus() == null) {
-            booking.setBookingStatus(BookingStatus.PENDING);
-        }
+        booking.setBookingStatus(BookingStatus.PENDING);
+
         if (!isAdmin(role)) {
             booking.setUserId(currentUserId);
         }
+
         Booking createdBooking = bookingRepository.save(booking);
-        notifyUser(createdBooking.getProviderID(), "You have a new booking request from user " + createdBooking.getUserId());
+        notifyUser(createdBooking.getProviderID(), "You have a new booking request");
         notifyUser(createdBooking.getUserId(), "Your booking request was created and is pending");
         return createdBooking;
     }
 
-    public List<Booking> findAll(Long currentUserId, UserRole role) {
+    public List<Booking> findAll( UserRole role) {
         if (isAdmin(role)) {
             return bookingRepository.findAll();
         }
-        if (isProvider(role)) {
-            return bookingRepository.findAllByProviderID(currentUserId);
-        }
-        return bookingRepository.findAllByUserId(currentUserId);
+        return new ArrayList<>();
     }
 
     public Optional<Booking> findById(Long id, Long currentUserId, UserRole role) {
-        return bookingRepository.findById(id).map(booking -> {
+        Optional<Booking> opt = bookingRepository.findById(id);
+        if (opt.isPresent()) {
+            Booking booking = opt.get();
             assertBookingAccess(booking, currentUserId, role);
-            return booking;
-        });
+            return Optional.of(booking);
+        }
+        return Optional.empty();
     }
 
     public List<Booking> findAllByUserId(Long userId, Long currentUserId, UserRole role) {
@@ -75,46 +73,53 @@ public class BookingService {
     }
 
     public Optional<Booking> update(Long id, Booking updatedBooking, Long currentUserId, UserRole role) {
-        return bookingRepository.findById(id).map(existingBooking -> {
-            assertBookingAccess(existingBooking, currentUserId, role);
-            existingBooking.setUserId(updatedBooking.getUserId());
-            existingBooking.setProviderID(updatedBooking.getProviderID());
-            existingBooking.setBookingDate(updatedBooking.getBookingDate());
-            existingBooking.setBookingTime(updatedBooking.getBookingTime());
-            if (!isAdmin(role)) {
-                existingBooking.setUserId(currentUserId);
-            }
-            return bookingRepository.save(existingBooking);
-        });
+        Optional<Booking> opt = bookingRepository.findById(id);
+        if (opt.isEmpty()) {
+            return Optional.empty();
+        }
+        Booking existingBooking = opt.get();
+        assertBookingAccess(existingBooking, currentUserId, role);
+        existingBooking.setUserId(updatedBooking.getUserId());
+        existingBooking.setProviderID(updatedBooking.getProviderID());
+        existingBooking.setBookingDate(updatedBooking.getBookingDate());
+        existingBooking.setBookingTime(updatedBooking.getBookingTime());
+        if (!isAdmin(role)) {
+            existingBooking.setUserId(currentUserId);
+        }
+        Booking saved = bookingRepository.save(existingBooking);
+        return Optional.of(saved);
     }
 
     public Optional<Booking> updateStatus(Long id, BookingStatus bookingStatus, Long currentUserId, UserRole role) {
-        return bookingRepository.findById(id).map(existingBooking -> {
-            if (isAdmin(role)) {
-                existingBooking.setBookingStatus(bookingStatus);
-                Booking savedBooking = bookingRepository.save(existingBooking);
-                notifyUser(savedBooking.getUserId(), "Your booking status is now " + bookingStatus);
-                return savedBooking;
-            }
-
-            if (bookingStatus == BookingStatus.CANCELLED) {
-                if (!existingBooking.getUserId().equals(currentUserId)) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the booking owner can cancel it");
-                }
-            } else {
-                if (!isProvider(role) || !existingBooking.getProviderID().equals(currentUserId)) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the assigned provider can change this status");
-                }
-            }
-
+        Optional<Booking> opt = bookingRepository.findById(id);
+        if (opt.isEmpty()) {
+            return Optional.empty();
+        }
+        Booking existingBooking = opt.get();
+        if (isAdmin(role)) {
             existingBooking.setBookingStatus(bookingStatus);
             Booking savedBooking = bookingRepository.save(existingBooking);
             notifyUser(savedBooking.getUserId(), "Your booking status is now " + bookingStatus);
-            if (bookingStatus == BookingStatus.CANCELLED) {
-                notifyUser(savedBooking.getProviderID(), "Booking " + savedBooking.getId() + " was cancelled by the user");
+            return Optional.of(savedBooking);
+        }
+
+        if (bookingStatus == BookingStatus.CANCELLED) {
+            if (!existingBooking.getUserId().equals(currentUserId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the booking owner can cancel it");
             }
-            return savedBooking;
-        });
+        } else {
+            if (!isProvider(role) || !existingBooking.getProviderID().equals(currentUserId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the assigned provider can change this status");
+            }
+        }
+
+        existingBooking.setBookingStatus(bookingStatus);
+        Booking savedBooking = bookingRepository.save(existingBooking);
+        notifyUser(savedBooking.getUserId(), "Your booking status is now " + bookingStatus);
+        if (bookingStatus == BookingStatus.CANCELLED) {
+            notifyUser(savedBooking.getProviderID(), "Booking " + savedBooking.getId() + " was cancelled by the user");
+        }
+        return Optional.of(savedBooking);
     }
 
     public boolean delete(Long id, Long currentUserId, UserRole role) {

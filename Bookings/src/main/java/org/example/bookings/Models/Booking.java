@@ -25,7 +25,7 @@ public class Booking {
     @Column(nullable = false)
     private LocalTime bookingTime;
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
+     @Enumerated(EnumType.STRING)
     private BookingStatus bookingStatus;
 
 
