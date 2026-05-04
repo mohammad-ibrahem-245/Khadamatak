@@ -8,6 +8,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Locale;
 
 @Service
 public class PostsService {
@@ -39,6 +41,26 @@ public class PostsService {
 
 	public List<Post> findAll(Long userId, UserRole role) {
 		return isAdmin(role) ? postsRepositories.findAll() : postsRepositories.findAllByOwner(userId);
+	}
+
+	public List<Post> search(String query, Long userId, UserRole role) {
+		List<Post> accessiblePosts = isAdmin(role)
+				? postsRepositories.findAll()
+				: postsRepositories.findAllByOwner(userId);
+
+		if (query == null || query.isBlank()) {
+			return accessiblePosts;
+		}
+
+		String normalizedQuery = query.trim().toLowerCase(Locale.ROOT);
+		Long ownerQuery = parseOwnerQuery(query);
+		List<Post> filteredPosts = new ArrayList<>();
+		for (Post post : accessiblePosts) {
+			if (matchesSearch(post, normalizedQuery, ownerQuery)) {
+				filteredPosts.add(post);
+			}
+		}
+		return filteredPosts;
 	}
 
 	public Optional<Post> findById(Long id, Long userId, UserRole role) {
@@ -96,5 +118,20 @@ public class PostsService {
 
 	private boolean isAdmin(UserRole role) {
 		return role == UserRole.ADMIN;
+	}
+
+	private boolean matchesSearch(Post post, String normalizedQuery, Long ownerQuery) {
+		boolean matchesTitle = post.getTitle() != null && post.getTitle().toLowerCase(Locale.ROOT).contains(normalizedQuery);
+		boolean matchesContent = post.getContent() != null && post.getContent().toLowerCase(Locale.ROOT).contains(normalizedQuery);
+		boolean matchesOwner = ownerQuery != null && ownerQuery.equals(post.getOwner());
+		return matchesTitle || matchesContent || matchesOwner;
+	}
+
+	private Long parseOwnerQuery(String query) {
+		try {
+			return Long.valueOf(query.trim());
+		} catch (NumberFormatException ex) {
+			return null;
+		}
 	}
 }

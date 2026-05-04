@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/favirote")
-public class FaviroteController {
+public class FavoriteController {
 
     private final FaviroteService faviroteService;
 
-    public FaviroteController(FaviroteService faviroteService) {
+    public FavoriteController(FaviroteService faviroteService) {
         this.faviroteService = faviroteService;
     }
 

@@ -24,21 +24,28 @@ public class PostsController {
     private PostsService postsService;
 
 
-    @PostMapping("/add")
+    @PostMapping
     public ResponseEntity<Post> create(@RequestBody Post post,
                                        @RequestHeader("X-User-Id") Long userId,
                                        @RequestHeader("X-Role") UserRole role) {
         return ResponseEntity.ok(postsService.create(post, userId, role));
     }
 
-      @GetMapping("/all")
-      public ResponseEntity<List<Post>> findAll(@RequestParam(required = false) Long owner,
-                                                @RequestHeader("X-User-Id") Long userId,
-                                                @RequestHeader("X-Role") UserRole role) {
+    @GetMapping("/all")
+    public ResponseEntity<List<Post>> getAll(@RequestParam(required = false) Long owner,
+                                             @RequestHeader("X-User-Id") Long userId,
+                                             @RequestHeader("X-Role") UserRole role) {
         if (owner != null) {
-          return ResponseEntity.ok(postsService.findAllByOwner(owner, userId, role));
+            return ResponseEntity.ok(postsService.findAllByOwner(owner, userId, role));
         }
         return ResponseEntity.ok(postsService.findAll(userId, role));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Post>> search(@RequestParam String q,
+                                             @RequestHeader("X-User-Id") Long userId,
+                                             @RequestHeader("X-Role") UserRole role) {
+        return ResponseEntity.ok(postsService.search(q, userId, role));
     }
 
     @GetMapping("/{id}")
