@@ -58,10 +58,11 @@ public class UserService {
     /// signing up a new user
     public boolean saveUser(SiteUser user){
         if (!checkUserExists(user.getEmail())) {
-
-            if (user.getRole().equals(UserRole.ADMIN)) {
-            user.setRole(UserRole.USER);}else {
-                user.setRole(user.getRole() == null ? UserRole.USER : user.getRole());
+            UserRole requestedRole = user.getRole();
+            if (requestedRole == null || requestedRole == UserRole.ADMIN) {
+                user.setRole(UserRole.USER);
+            } else {
+                user.setRole(requestedRole);
             }
             user.setPassword(passwordHasher.hashToString(12, user.getPassword().toCharArray()));
             user.setCreated(Date.from(new Date().toInstant()));

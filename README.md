@@ -261,6 +261,8 @@ Body:
 }
 ```
 
+`author` is taken from the authenticated `X-User-Id` header; admins may override it.
+
 ### `GET /posts/reviews/allreviews`
 Get all reviews.
 

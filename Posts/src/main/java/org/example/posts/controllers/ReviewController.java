@@ -29,9 +29,9 @@ public class ReviewController {
 
     @PostMapping("/add")
     public ResponseEntity<Reviews> create(@RequestBody Reviews review,
-                                          @RequestHeader("X-User-Name") String username,
+                                          @RequestHeader("X-User-Id") Long userId,
                                           @RequestHeader("X-Role") UserRole role) {
-        return ResponseEntity.ok(reviewService.create(review, username, role));
+        return ResponseEntity.ok(reviewService.create(review, userId, role));
     }
 
     @GetMapping("/allreviews")
@@ -48,18 +48,18 @@ public class ReviewController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Reviews> update(@PathVariable Long id, @RequestBody Reviews review,
-                                          @RequestHeader("X-User-Name") String username,
+                                          @RequestHeader("X-User-Id") Long userId,
                                           @RequestHeader("X-Role") UserRole role) {
-        return reviewService.update(id, review, username, role)
+        return reviewService.update(id, review, userId, role)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id,
-                                       @RequestHeader("X-User-Name") String username,
+                                       @RequestHeader("X-User-Id") Long userId,
                                        @RequestHeader("X-Role") UserRole role) {
-        return reviewService.delete(id, username, role)
+        return reviewService.delete(id, userId, role)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
     }

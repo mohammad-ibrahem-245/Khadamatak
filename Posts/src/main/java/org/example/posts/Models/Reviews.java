@@ -14,7 +14,7 @@ public class Reviews {
     @Column
     private String content;
     @Column(nullable = false)
-    private String author;
+    private Long author;
     @Column(nullable = false)
     private long postId;
     @Column(nullable = false)

@@ -19,9 +19,9 @@ public class ReviewService {
     private ReviewRepository reviewRepository;
 
 
-    public Reviews create(Reviews review, String username, UserRole role) {
+    public Reviews create(Reviews review, Long userId, UserRole role) {
         review.setId(null);
-        review.setAuthor(isAdmin(role) && review.getAuthor() != null ? review.getAuthor() : username);
+        review.setAuthor(isAdmin(role) && review.getAuthor() != null ? review.getAuthor() : userId);
         return reviewRepository.save(review);
     }
 
@@ -37,9 +37,9 @@ public class ReviewService {
         return Optional.of(reviewRepository.findAllByPostId(postId));
     }
 
-    public Optional<Reviews> update(Long id, Reviews updatedReview, String username, UserRole role) {
+    public Optional<Reviews> update(Long id, Reviews updatedReview, Long userId, UserRole role) {
         return reviewRepository.findById(id).map(existingReview -> {
-            assertReviewAccess(existingReview, username, role);
+            assertReviewAccess(existingReview, userId, role);
             existingReview.setContent(updatedReview.getContent());
             existingReview.setPostId(updatedReview.getPostId());
             existingReview.setRating(updatedReview.getRating());
@@ -50,16 +50,16 @@ public class ReviewService {
         });
     }
 
-    public boolean delete(Long id, String username, UserRole role) {
+    public boolean delete(Long id, Long userId, UserRole role) {
         Reviews review = reviewRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
-        assertReviewAccess(review, username, role);
+        assertReviewAccess(review, userId, role);
         reviewRepository.deleteById(id);
         return true;
     }
 
-    private void assertReviewAccess(Reviews review, String username, UserRole role) {
-        if (!isAdmin(role) && !review.getAuthor().equalsIgnoreCase(username)) {
+    private void assertReviewAccess(Reviews review, Long userId, UserRole role) {
+        if (!isAdmin(role) && !review.getAuthor().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage your own reviews");
         }
     }
