@@ -81,6 +81,7 @@ public class BookingService {
         assertBookingAccess(existingBooking, currentUserId, role);
         existingBooking.setUserId(updatedBooking.getUserId());
         existingBooking.setProviderID(updatedBooking.getProviderID());
+        existingBooking.setPostId(updatedBooking.getPostId());
         existingBooking.setBookingDate(updatedBooking.getBookingDate());
         existingBooking.setBookingTime(updatedBooking.getBookingTime());
         if (!isAdmin(role)) {

@@ -21,6 +21,8 @@ public class Booking {
     @Column(nullable = false)
     private Long providerID;
     @Column(nullable = false)
+    private Long postId;
+    @Column(nullable = false)
     private Date bookingDate;
     @Column(nullable = false)
     private LocalTime bookingTime;

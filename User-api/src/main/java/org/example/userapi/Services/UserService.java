@@ -59,7 +59,10 @@ public class UserService {
     public boolean saveUser(SiteUser user){
         if (!checkUserExists(user.getEmail())) {
 
-            user.setRole(UserRole.USER);
+            if (user.getRole().equals(UserRole.ADMIN)) {
+            user.setRole(UserRole.USER);}else {
+                user.setRole(user.getRole() == null ? UserRole.USER : user.getRole());
+            }
             user.setPassword(passwordHasher.hashToString(12, user.getPassword().toCharArray()));
             user.setCreated(Date.from(new Date().toInstant()));
             userRepo.save(user);

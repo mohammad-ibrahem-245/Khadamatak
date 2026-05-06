@@ -22,5 +22,7 @@ public class SiteUser {
     private Date created ;
     private String career;
     private UserRole role;
+    private double latitude;
+    private double longitude;
 
 }

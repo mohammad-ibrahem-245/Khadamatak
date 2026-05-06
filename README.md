@@ -331,11 +331,10 @@ Body:
 
 ```json
 {
+  "postId": 5,
   "providerID": 20,
   "bookingDate": "2026-04-12T00:00:00.000+00:00",
-  "bookingTime": "10:30:00",
-  "longitude": "46.6753",
-  "latitude": "24.7136"
+  "bookingTime": "10:30:00"
 }
 ```
 
@@ -367,11 +366,10 @@ Body:
 
 ```json
 {
+  "postId": 5,
   "providerID": 20,
   "bookingDate": "2026-04-15T00:00:00.000+00:00",
-  "bookingTime": "11:00:00",
-  "longitude": "46.6753",
-  "latitude": "24.7136"
+  "bookingTime": "11:00:00"
 }
 ```
 
