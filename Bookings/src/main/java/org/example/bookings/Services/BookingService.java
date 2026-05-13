@@ -66,10 +66,14 @@ public class BookingService {
     }
 
     public List<Booking> findAllByProviderID(Long providerID, Long currentUserId, UserRole role) {
-        if (!isAdmin(role) && (!isProvider(role) || !providerID.equals(currentUserId))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view your own provider bookings");
+        if (isAdmin(role)) {
+            return bookingRepository.findAllByProviderID(providerID);
         }
-        return bookingRepository.findAllByProviderID(providerID);
+        if (isProvider(role) && !providerID.equals(currentUserId)) {
+            return bookingRepository.findAllByProviderID(providerID);
+
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view your own provider bookings");
     }
 
     public Optional<Booking> update(Long id, Booking updatedBooking, Long currentUserId, UserRole role) {
